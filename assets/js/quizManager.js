@@ -1,0 +1,442 @@
+// quizManager.js - 題庫載入、出題演算法、卡牌選項與答題進度狀態管理
+
+export class QuizManager {
+  constructor() {
+    this.questions = [];
+    this.currentIndex = 0;
+    this.unlockedIds = new Set();
+    this.selectedOption = null;
+    this.currentCards = [];
+    this.hintStep = 0; // 0: 無提示, 1: 線索一, 2: 線索二, 3: 線索三
+  }
+
+  // 內嵌資料 (作為 file:// 本機安全回退，防止 Chrome CORS 阻擋本地 fetch)
+  getFallbackQuestions() {
+    return [
+      {
+        id: "yeye",
+        role: "祖父（爺爺）",
+        shortRole: "爺爺",
+        zhuyin: "ㄗㄨˇ ㄈㄨˋ（ㄧㄝˊ ˙ㄧㄝ）",
+        side: "father",
+        generation: 1,
+        gender: "male",
+        relation: "爸爸的爸爸",
+        treeNodeId: "node_yeye",
+        avatar: "grandpa_paternal",
+        dialogue: "我是你爸爸的父親喔！小時候你爸爸很皮，常常被我念呢！每年過年我最期待看到你們回來陪我泡茶、吃年夜飯。想一想，你該怎麼稱呼我呢？",
+        clues: [
+          "我是爸爸那一邊的長輩（父系）",
+          "我是你爸爸的爸爸",
+          "大家平常習慣親切叫我爺爺"
+        ],
+        distractors: ["祖父（外公）", "伯伯", "舅舅"]
+      },
+      {
+        id: "nainai",
+        role: "祖母（奶奶）",
+        shortRole: "奶奶",
+        zhuyin: "ㄗㄨˇ ㄇㄨˇ（ㄋㄞˇ ˙ㄋㄞ）",
+        side: "father",
+        generation: 1,
+        gender: "female",
+        relation: "爸爸的媽媽",
+        treeNodeId: "node_nainai",
+        avatar: "grandma_paternal",
+        dialogue: "乖孫～我是你爸爸的母親！每次你來家裡，我都燉了你最喜歡吃的香菇雞湯。看到你健康長大，我就好開心。猜猜我是誰？",
+        clues: [
+          "我是爸爸那邊的女性長輩",
+          "我是你爸爸的媽媽",
+          "大家平時常親切稱呼我為奶奶"
+        ],
+        distractors: ["祖母（外婆）", "伯母", "阿姨"]
+      },
+      {
+        id: "waigong",
+        role: "祖父（外公）",
+        shortRole: "外公",
+        zhuyin: "ㄗㄨˇ ㄈㄨˋ（ㄨㄞˋ ㄍㄨㄥ）",
+        side: "mother",
+        generation: 1,
+        gender: "male",
+        relation: "媽媽的爸爸",
+        treeNodeId: "node_waigong",
+        avatar: "grandpa_maternal",
+        dialogue: "你好呀！我是你媽媽的父親。你媽媽小時候最喜歡坐在我的腳踏車後座吹風。現在教育部規定，也可以尊稱我為祖父喔！平時大家常怎麼稱呼我呢？",
+        clues: [
+          "我是媽媽那一邊的長輩（母系）",
+          "我是你媽媽的爸爸",
+          "在課本上是母親的父親，通常稱為外公"
+        ],
+        distractors: ["祖父（爺爺）", "姑丈", "叔叔"]
+      },
+      {
+        id: "waipo",
+        role: "祖母（外婆）",
+        shortRole: "外婆",
+        zhuyin: "ㄗㄨˇ ㄇㄨˇ（ㄨㄞˋ ㄆㄛˊ）",
+        side: "mother",
+        generation: 1,
+        gender: "female",
+        relation: "媽媽的媽媽",
+        treeNodeId: "node_waipo",
+        avatar: "waipo",
+        dialogue: "哈哈～我是你媽媽的母親喔！你媽媽長得很像我年輕的時候呢！每次你們回娘家，我都會準備好多好吃的點心給你。動動腦，你該叫我什麼？",
+        clues: [
+          "我是媽媽那邊的女性長輩",
+          "我是你媽媽的媽媽",
+          "大家平時常親切稱呼我為外婆（也可尊稱祖母）"
+        ],
+        distractors: ["祖母（奶奶）", "嬸嬸", "姑姑"]
+      },
+      {
+        id: "bobo",
+        role: "伯伯",
+        shortRole: "伯伯",
+        zhuyin: "ㄅㄛˊ ˙ㄅㄛ",
+        side: "father",
+        generation: 2,
+        gender: "male",
+        relation: "爸爸的哥哥",
+        treeNodeId: "node_bobo",
+        avatar: "uncle_bobo",
+        dialogue: "哈哈！我是你爸爸的親哥哥！我們小時候在院子裡玩捉迷藏，你爸爸總是跑在我後頭。因為我年紀比你爸爸大，按照長幼排序，你應該叫我什麼呢？",
+        clues: [
+          "我是爸爸那一邊的男性長輩",
+          "我比你爸爸年紀還要大",
+          "我的小孩是你的堂兄弟姐妹"
+        ],
+        distractors: ["叔叔", "舅舅", "姑丈"]
+      },
+      {
+        id: "bomu",
+        role: "伯母",
+        shortRole: "伯母",
+        zhuyin: "ㄅㄛˊ ㄇㄨˇ",
+        side: "father",
+        generation: 2,
+        gender: "female",
+        relation: "爸爸哥哥的妻子（伯伯的太太）",
+        treeNodeId: "node_bomu",
+        avatar: "aunt_bomu",
+        dialogue: "你好呀！我是你伯伯的太太（也就是你爸爸哥哥的妻子）。我和伯伯常跟你們家聚餐，我的廚藝可是很受大家歡迎的喔！你該叫我什麼？",
+        clues: [
+          "我是爸爸哥哥的妻子",
+          "我的先生是你爸爸的哥哥（伯伯）",
+          "我和嬸嬸不同，我是伯伯的伴侶"
+        ],
+        distractors: ["嬸嬸", "阿姨", "舅媽"]
+      },
+      {
+        id: "shushu",
+        role: "叔叔",
+        shortRole: "叔叔",
+        zhuyin: "ㄕㄨ ˙ㄕㄨ",
+        side: "father",
+        generation: 2,
+        gender: "male",
+        relation: "爸爸的弟弟",
+        treeNodeId: "node_shushu",
+        avatar: "uncle_shushu",
+        dialogue: "嗨！我是你爸爸的親弟弟！我比你爸爸年輕，每次過年我都會帶最新發明的桌遊來找你們玩。猜猜看，爸爸的弟弟應該叫什麼？",
+        clues: [
+          "我是爸爸那一邊的男性親人",
+          "我比你爸爸年紀還要小",
+          "我的小孩也是你的堂兄弟姐妹"
+        ],
+        distractors: ["伯伯", "舅舅", "姨丈"]
+      },
+      {
+        id: "shenshen",
+        role: "嬸嬸",
+        shortRole: "嬸嬸",
+        zhuyin: "ㄕㄣˇ ˙ㄕㄣ",
+        side: "father",
+        generation: 2,
+        gender: "female",
+        relation: "爸爸弟弟的妻子（叔叔的太太）",
+        treeNodeId: "node_shenshen",
+        avatar: "aunt_shenshen",
+        dialogue: "哈囉！我是你叔叔的太太（爸爸弟弟的妻子）。每次叔叔帶你玩遊戲，我都在旁邊幫大家切水果泡茶。你應該怎麼稱呼我呢？",
+        clues: [
+          "我是爸爸弟弟的妻子",
+          "我的先生是你爸爸的弟弟（叔叔）",
+          "我的孩子是你的堂兄弟姐妹"
+        ],
+        distractors: ["伯母", "舅媽", "阿姨"]
+      },
+      {
+        id: "gugu",
+        role: "姑姑",
+        shortRole: "姑姑",
+        zhuyin: "ㄍㄨ ˙ㄍㄨ",
+        side: "father",
+        generation: 2,
+        gender: "female",
+        relation: "爸爸的姐妹",
+        treeNodeId: "node_gugu",
+        avatar: "aunt_gugu",
+        dialogue: "哈囉～我是你爸爸的親姐妹！我跟你爸爸感情特別好。特別提醒你喔，我的孩子跟你不同姓，所以他們是你的『表』兄弟姐妹喔！那我是你的什麼呢？",
+        clues: [
+          "我是爸爸那一邊的女性親人",
+          "我是你爸爸的姐妹",
+          "我的孩子你要稱呼為表兄弟姐妹"
+        ],
+        distractors: ["阿姨", "舅媽", "伯母"]
+      },
+      {
+        id: "guzhang",
+        role: "姑丈",
+        shortRole: "姑丈",
+        zhuyin: "ㄍㄨ ㄓㄤˋ",
+        side: "father",
+        generation: 2,
+        gender: "male",
+        relation: "姑姑的先生",
+        treeNodeId: "node_guzhang",
+        avatar: "uncle_guzhang",
+        dialogue: "你好！我是你姑姑的先生。每次家庭聚會我都負責開車載姑姑和孩子們一起回老家。想一想，姑姑的丈夫該叫什麼？",
+        clues: [
+          "我是姑姑的先生",
+          "我是爸爸姐妹的配偶",
+          "在親屬稱謂中有一個『姑』字"
+        ],
+        distractors: ["姨丈", "舅舅", "伯伯"]
+      },
+      {
+        id: "jiujiu",
+        role: "舅舅",
+        shortRole: "舅舅",
+        zhuyin: "ㄐㄧㄡˋ ˙ㄐㄧㄡ",
+        side: "mother",
+        generation: 2,
+        gender: "male",
+        relation: "媽媽的兄弟",
+        treeNodeId: "node_jiujiu",
+        avatar: "uncle_jiujiu",
+        dialogue: "嗨！我是你媽媽的兄弟。小時候你媽媽常常跟我搶電視看呢！不管我是媽媽的哥哥還是弟弟，在中文裡都統一稱呼同一個名字喔！你該叫我什麼？",
+        clues: [
+          "我是媽媽那一邊的男性長輩",
+          "我是你媽媽的兄弟（哥哥或弟弟）",
+          "我的小孩是你的表兄弟姐妹"
+        ],
+        distractors: ["伯伯", "叔叔", "姑丈"]
+      },
+      {
+        id: "jiuma",
+        role: "舅媽",
+        shortRole: "舅媽",
+        zhuyin: "ㄐㄧㄡˋ ㄇㄚ",
+        side: "mother",
+        generation: 2,
+        gender: "female",
+        relation: "舅舅的太太",
+        treeNodeId: "node_jiuma",
+        avatar: "aunt_jiuma",
+        dialogue: "哈囉！我是你舅舅的太太。上次你們到外公家作客，我還烤了香甜的蛋糕給大家吃呢。猜猜看，舅舅的太太應該怎麼叫？",
+        clues: [
+          "我是媽媽兄弟的妻子",
+          "我的先生是你媽媽的兄弟（舅舅）",
+          "我的孩子是你的表兄弟姐妹"
+        ],
+        distractors: ["阿姨", "伯母", "嬸嬸"]
+      },
+      {
+        id: "ayi",
+        role: "阿姨",
+        shortRole: "阿姨",
+        zhuyin: "ㄚ ㄧˊ",
+        side: "mother",
+        generation: 2,
+        gender: "female",
+        relation: "媽媽的姐妹",
+        treeNodeId: "node_ayi",
+        avatar: "aunt_ayi",
+        dialogue: "哈囉小寶貝！我是你媽媽的姐妹喔！我和你媽媽長得非常神似，說話聲音也很像。我有空最喜歡帶你去逛書店了。你該怎麼稱呼我呢？",
+        clues: [
+          "我是媽媽那一邊的女性親人",
+          "我是你媽媽的姐妹",
+          "我的孩子也是你的表兄弟姐妹"
+        ],
+        distractors: ["姑姑", "舅媽", "伯母"]
+      },
+      {
+        id: "yizhang",
+        role: "姨丈",
+        shortRole: "姨丈",
+        zhuyin: "ㄧˊ ㄓㄤˋ",
+        side: "mother",
+        generation: 2,
+        gender: "male",
+        relation: "阿姨的先生",
+        treeNodeId: "node_yizhang",
+        avatar: "uncle_yizhang",
+        dialogue: "你好呀！我是你阿姨的先生。假日野餐時，我都負責搭帳篷和烤肉喔！想一想，阿姨的丈夫該怎麼稱呼呢？",
+        clues: [
+          "我是阿姨的先生",
+          "我是媽媽姐妹的配偶",
+          "稱謂中有一個『姨』字"
+        ],
+        distractors: ["姑丈", "舅舅", "叔叔"]
+      },
+      {
+        id: "tang_bro",
+        role: "堂哥／堂弟",
+        shortRole: "堂兄弟",
+        zhuyin: "ㄊㄤˊ ㄍㄜ / ㄊㄤˊ ㄉㄧˋ",
+        side: "father",
+        generation: 3,
+        gender: "male",
+        relation: "伯伯或叔叔的兒子",
+        treeNodeId: "node_tang_bro",
+        avatar: "cousin_tang_boy",
+        dialogue: "嘿！我的爸爸是你爸爸的兄弟（也就是你的伯伯或叔叔），我們同姓同宗族，過年都在老家祖堂一起放鞭炮喔！我們之間屬於哪一種兄弟關係呢？",
+        clues: [
+          "我是伯伯或叔叔的兒子",
+          "我和你同姓（同宗同堂）",
+          "稱謂前面有一個『堂』字"
+        ],
+        distractors: ["表哥／表弟", "親兄弟", "叔叔"]
+      },
+      {
+        id: "biao_bro",
+        role: "表哥／表弟",
+        shortRole: "表兄弟",
+        zhuyin: "ㄅㄧㄠˇ ㄍㄜ / ㄅㄧㄠˇ ㄉㄧˋ",
+        side: "mother",
+        generation: 3,
+        gender: "male",
+        relation: "姑姑、舅舅或阿姨的兒子",
+        treeNodeId: "node_biao_bro",
+        avatar: "cousin_biao_boy",
+        dialogue: "哈囉！我的媽媽是你爸爸的姐妹（姑姑），或者我媽媽是你舅舅/阿姨的孩子！我們常常一起打籃球，但我跟我爸爸姓，和你的姓氏不同。你該叫我什麼呢？",
+        clues: [
+          "我是姑姑、舅舅或阿姨的兒子",
+          "通常與你不同姓氏",
+          "稱謂前面有一個『表』字"
+        ],
+        distractors: ["堂哥／堂弟", "伯伯", "親兄弟"]
+      }
+    ];
+  }
+
+  // 異步載入題目 JSON
+  async init() {
+    try {
+      const response = await fetch('./自我介紹.json');
+      if (!response.ok) throw new Error('Network error');
+      this.questions = await response.json();
+    } catch (e) {
+      console.warn('載入 自我介紹.json 受到環境限制，啟動安全內建題庫備援。', e);
+      this.questions = this.getFallbackQuestions();
+    }
+
+    this.resetQuiz();
+  }
+
+  // 重置遊戲
+  resetQuiz() {
+    this.unlockedIds.clear();
+    this.currentIndex = 0;
+    this.hintStep = 0;
+    this.selectedOption = null;
+
+    // 洗牌題庫順序（讓每次遊玩有新鮮感）
+    this.questions = [...this.questions].sort(() => Math.random() - 0.5);
+    this.generateCardsForCurrent();
+  }
+
+  // 取得目前題目
+  getCurrentQuestion() {
+    if (this.currentIndex >= this.questions.length) {
+      return null;
+    }
+    return this.questions[this.currentIndex];
+  }
+
+  // 為當前題目生成 4 張洗牌後的卡牌
+  generateCardsForCurrent() {
+    const q = this.getCurrentQuestion();
+    if (!q) {
+      this.currentCards = [];
+      return;
+    }
+
+    // 正解 + 3 個干擾項
+    const options = [
+      { text: q.role, isCorrect: true, zhuyin: q.zhuyin },
+      ...q.distractors.map(d => ({ text: d, isCorrect: false, zhuyin: '' }))
+    ];
+
+    // 洗牌卡牌
+    this.currentCards = options.sort(() => Math.random() - 0.5);
+    this.selectedOption = null;
+    this.hintStep = 0;
+  }
+
+  // 選中某張卡牌
+  selectCard(option) {
+    this.selectedOption = option;
+  }
+
+  // 驗證答案
+  submitAnswer() {
+    if (!this.selectedOption) {
+      return { success: false, reason: 'unselected' };
+    }
+
+    const currentQ = this.getCurrentQuestion();
+    if (!currentQ) return { success: false, reason: 'finished' };
+
+    if (this.selectedOption.text === currentQ.role) {
+      // 答對！
+      this.unlockedIds.add(currentQ.treeNodeId);
+      const wasLast = this.currentIndex + 1 >= this.questions.length;
+      return {
+        success: true,
+        nodeId: currentQ.treeNodeId,
+        question: currentQ,
+        isCompleted: wasLast
+      };
+    } else {
+      // 答錯
+      return {
+        success: false,
+        reason: 'wrong',
+        correctRole: currentQ.role,
+        question: currentQ
+      };
+    }
+  }
+
+  // 前進到下一題
+  nextQuestion() {
+    this.currentIndex++;
+    this.generateCardsForCurrent();
+  }
+
+  // 取得下一個提示文字
+  getNextHint() {
+    const q = this.getCurrentQuestion();
+    if (!q || !q.clues) return null;
+
+    if (this.hintStep < q.clues.length) {
+      this.hintStep++;
+      return {
+        step: this.hintStep,
+        total: q.clues.length,
+        text: q.clues[this.hintStep - 1]
+      };
+    }
+    return null;
+  }
+
+  // 取得統計進度
+  getProgress() {
+    return {
+      unlocked: this.unlockedIds.size,
+      total: this.questions.length,
+      percentage: Math.round((this.unlockedIds.size / this.questions.length) * 100)
+    };
+  }
+}

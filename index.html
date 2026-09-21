@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>家族大搜查：親人稱謂大解密</title>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --success-color: #16a34a;
+      --warning-color: #f59e0b;
+      --danger-color: #dc2626;
+      --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #f3e8ff 100%);
+      --panel-bg: rgba(255, 255, 255, 0.96);
+      --bubble-bg: #ffffff;
+      --card-border: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: #1e293b;
+      user-select: none;
+      overflow-x: hidden;
+    }
+
+    /* 頂部導航列 */
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 20px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 2px solid #e2e8f0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .game-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .game-logo {
+      font-size: 26px;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .game-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #1e3a8a;
+      letter-spacing: 1px;
+    }
+
+    .game-subtitle {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .tool-btn:hover {
+      background: #f1f5f9;
+      transform: translateY(-1px);
+    }
+
+    .tool-btn.active {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+    }
+
+    /* 主遊戲舞台 (左右分割，對應手繪圖) */
+    .game-main {
+      display: grid;
+      grid-template-columns: 1.08fr 1.92fr;
+      gap: 16px;
+      padding: 12px 20px 8px 20px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* 左側：NPC 與對話泡泡區 */
+    .npc-stage-panel {
+      background: var(--panel-bg);
+      border-radius: 20px;
+      padding: 18px 22px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+      border: 2px solid #ffffff;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    .panel-header-badge {
+      position: absolute;
+      top: -11px;
+      left: 18px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 4px 12px;
+      border-radius: 16px;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      z-index: 15;
+    }
+
+    /* 上方：對談泡泡 (自我介紹.json) */
+    .speech-bubble-container {
+      width: 100%;
+      position: relative;
+      z-index: 10;
+    }
+
+    .speech-bubble {
+      background: var(--bubble-bg);
+      border: 2.5px solid #3b82f6;
+      border-radius: 18px;
+      padding: 16px 20px;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+    }
+
+    /* 氣泡箭頭向下指向星號處的 NPC 角色 */
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -13px;
+      left: 75px;
+      top: auto;
+      border-style: solid;
+      border-width: 13px 11px 0 11px;
+      border-color: #3b82f6 transparent transparent transparent;
+    }
+
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -9.5px;
+      left: 76px;
+      top: auto;
+      border-style: solid;
+      border-width: 10px 10px 0 10px;
+      border-color: #ffffff transparent transparent transparent;
+    }
+
+    .bubble-meta-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      font-weight: bold;
+      color: #2563eb;
+      background: #dbeafe;
+      padding: 3px 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .dialogue-text {
+      font-size: 18px;
+      line-height: 1.65;
+      color: #1e293b;
+      font-weight: 700;
+      min-height: 60px;
+    }
+
+    .speech-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .speech-btn {
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 7px 16px;
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .speech-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .speech-btn.btn-speaking {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #b91c1c;
+    }
+
+    .hints-box {
+      margin-top: 10px;
+      background: #fefce8;
+      border: 2px dashed #f59e0b;
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: none;
+    }
+
+    .hints-box.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .hint-item {
+      font-size: 13.5px;
+      color: #92400e;
+      margin: 4px 0;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 下方星號處：超大顯著的 NPC 手繪立繪展台 (大氣放大，不再小家子氣) */
+    .npc-showcase-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+      position: relative;
+      min-height: 380px;
+      width: 100%;
+    }
+
+    .npc-avatar-box {
+      width: min(440px, 92%);
+      height: min(440px, 50vh);
+      max-width: 450px;
+      max-height: 480px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: npcFloat 3.8s infinite ease-in-out;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(254, 243, 199, 0.8) 25%, rgba(224, 242, 254, 0.45) 58%, rgba(255, 255, 255, 0) 80%);
+      padding: 12px;
+      box-shadow: none;
+      border: none;
+    }
+
+    @keyframes npcFloat {
+      0%, 100% {
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        transform: translateY(-8px) scale(1.025);
+      }
+    }
+
+    .npc-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.18));
+    }
+
+    .npc-tag {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: #f8fafc;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 6px 22px;
+      border-radius: 25px;
+      white-space: nowrap;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+      border: 2px solid #64748b;
+      letter-spacing: 0.8px;
+    }
+
+    .avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.1));
+    }
+
+    .avatar-img-locked {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      filter: grayscale(100%) brightness(0.65) opacity(0.32);
+    }
+
+    .avatar-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* 右側：找到多少家人 家族樹狀圖 (大氣排版，填滿高度，各世代整齊對齊) */
+    .tree-stage-panel {
+      background: var(--panel-bg);
+      border-radius: 20px;
+      padding: 14px 18px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+      border: 2px solid #ffffff;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .tree-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    .tree-stage-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tree-progress-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ecfdf5;
+      border: 1.5px solid #10b981;
+      padding: 4px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      font-weight: 900;
+      color: #047857;
+    }
+
+    .tree-progress-bar-bg {
+      width: 90px;
+      height: 8px;
+      background: #d1fae5;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .tree-progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #10b981;
+      transition: width 0.4s ease;
+    }
+
+    /* 家族樹內部排版 */
+    .family-tree-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      height: 100%;
+      padding: 4px;
+      overflow-y: auto;
+    }
+
+    .tree-legend {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      align-items: center;
+      padding: 5px 12px;
+      background: #f8fafc;
+      border-radius: 16px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      border: 1px solid #e2e8f0;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .legend-father .legend-dot { background-color: #4caf50; }
+    .legend-core .legend-dot { background-color: #ff9800; }
+    .legend-mother .legend-dot { background-color: #ab47bc; }
+
+    .tree-layout {
+      display: grid;
+      grid-template-columns: 1.25fr 0.82fr 1.08fr;
+      gap: 12px;
+      flex: 1;
+      min-height: 480px;
+      height: 100%;
+    }
+
+    .tree-branch {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 8px;
+      border-radius: 16px;
+      border: 2.5px dashed #cbd5e1;
+      background: #ffffff;
+      height: 100%;
+    }
+
+    .branch-father {
+      background: linear-gradient(180deg, #f1f8e9 0%, #ffffff 100%);
+      border-color: #a5d6a7;
+    }
+
+    .branch-core {
+      background: linear-gradient(180deg, #fff8e1 0%, #ffffff 100%);
+      border-color: #ffe082;
+    }
+
+    .branch-mother {
+      background: linear-gradient(180deg, #f3e5f5 0%, #ffffff 100%);
+      border-color: #ce93d8;
+    }
+
+    .branch-label {
+      font-size: 14px;
+      font-weight: 900;
+      text-align: center;
+      padding: 5px 12px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .branch-father .branch-label { background: #c8e6c9; color: #1b5e20; }
+    .branch-core .branch-label { background: #ffe082; color: #e65100; }
+    .branch-mother .branch-label { background: #e1bee7; color: #4a148c; }
+
+    .tree-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .couple-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 4px 8px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(0,0,0,0.06);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    }
+
+    .couple-connector {
+      font-size: 16px;
+      color: #ec4899;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .relative-pair {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .me-group {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .core-tier-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: #d97706;
+      background: rgba(254, 243, 199, 0.85);
+      border: 1.5px dashed #f59e0b;
+      border-radius: 14px;
+      padding: 4px 12px;
+      letter-spacing: 0.5px;
+    }
+
+    /* 節點卡片 (大氣放大，不再小家子氣) */
+    .tree-node {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 8px;
+      border-radius: 11px;
+      background: #ffffff;
+      border: 2.5px solid #cfd8dc;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      min-width: 90px;
+      position: relative;
+    }
+
+    .tree-node:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.12);
+    }
+
+    .node-avatar-box {
+      width: 42px;
+      height: 42px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .light-badge, .lock-badge {
+      position: absolute;
+      right: -3px;
+      bottom: -3px;
+      font-size: 11px;
+      background: #ffffff;
+      border-radius: 50%;
+      padding: 1.5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+
+    .node-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .node-title {
+      font-size: 13.5px;
+      font-weight: 900;
+      color: #1e293b;
+      white-space: nowrap;
+    }
+
+    .node-relation {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    /* 鎖定 / 目標呼吸燈 / 答對亮燈 */
+    .node-locked {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      opacity: 0.85;
+    }
+
+    .node-locked .node-title {
+      color: #64748b;
+    }
+
+    .node-target-pulse {
+      border-color: #f59e0b !important;
+      background: #fffbeb !important;
+      animation: pulseHalo 1.5s infinite ease-in-out;
+      transform: scale(1.06);
+      z-index: 10;
+    }
+
+    .node-target-pulse .node-title {
+      color: #b45309 !important;
+      font-weight: 900;
+    }
+
+    @keyframes pulseHalo {
+      0%, 100% {
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4), 0 3px 10px rgba(245, 158, 11, 0.25);
+      }
+      50% {
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15), 0 5px 14px rgba(245, 158, 11, 0.4);
+      }
+    }
+
+    .node-unlocked {
+      opacity: 1;
+    }
+
+    .father-node.node-unlocked {
+      border-color: #4caf50;
+      background: #f1f8e9;
+    }
+    .father-node.node-unlocked .node-title { color: #2e7d32; }
+
+    .mother-node.node-unlocked {
+      border-color: #ab47bc;
+      background: #f3e5f5;
+    }
+    .mother-node.node-unlocked .node-title { color: #6a1b9a; }
+
+    .core-node.node-unlocked {
+      border-color: #ff9800;
+      background: #fff3e0;
+    }
+    .core-node.node-unlocked .node-title { color: #e65100; }
+
+    .node-just-lit {
+      animation: litBurst 1.2s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+      z-index: 20;
+    }
+
+    @keyframes litBurst {
+      0% { transform: scale(0.9); filter: brightness(1.8); }
+      40% { transform: scale(1.18); filter: brightness(2); box-shadow: 0 0 20px #ffd700; }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    /* 下方卡牌操作區 (大氣放大，好點擊、不小氣) */
+    .cards-dock {
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border-top: 2px solid #e2e8f0;
+      padding: 10px 24px 14px 24px;
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+    }
+
+    .dock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .dock-prompt {
+      font-size: 15px;
+      font-weight: 900;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dock-shortcut-hint {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .cards-action-layout {
+      display: flex;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .choice-cards-group {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      flex: 1;
+    }
+
+    .choice-card {
+      background: #ffffff;
+      border: 3px solid var(--card-border);
+      border-radius: 14px;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+      position: relative;
+      min-height: 72px;
+    }
+
+    .choice-card:hover {
+      transform: translateY(-3px);
+      border-color: #93c5fd;
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+    }
+
+    .choice-card.selected {
+      border-color: #2563eb;
+      background: #eff6ff;
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+    }
+
+    .card-num-badge {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #94a3b8;
+      background: #f1f5f9;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .choice-card.selected .card-num-badge {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .card-role-text {
+      font-size: 21px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: 1.5px;
+    }
+
+    .choice-card.selected .card-role-text {
+      color: #1d4ed8;
+    }
+
+    .card-zhuyin {
+      font-size: 12px;
+      color: #64748b;
+      letter-spacing: 1px;
+      height: 16px;
+      font-weight: 600;
+    }
+
+    .submit-btn-box {
+      width: 175px;
+      display: flex;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
+    }
+
+    .submit-btn:disabled {
+      background: #cbd5e1;
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .submit-btn-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .submit-btn-sub {
+      font-size: 10px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+
+    /* 浮動提示 Toast */
+    .feedback-toast {
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #ffffff;
+      padding: 12px 24px;
+      border-radius: 25px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+      font-size: 16px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .feedback-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .feedback-toast.correct {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 2px solid #10b981;
+    }
+
+    .feedback-toast.wrong {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+    }
+
+    /* 勝利 Modal */
+    .victory-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .victory-modal-overlay.show {
+      display: flex;
+      animation: fadeIn 0.35s ease;
+    }
+
+    .victory-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 30px 36px;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .victory-trophy {
+      font-size: 56px;
+      margin-bottom: 8px;
+    }
+
+    .victory-title {
+      font-size: 25px;
+      font-weight: 900;
+      color: #1e3a8a;
+      margin-bottom: 6px;
+    }
+
+    .victory-desc {
+      font-size: 14px;
+      color: #475569;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .victory-btn {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border: none;
+      padding: 12px 28px;
+      font-size: 16px;
+      font-weight: 900;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 1280px) {
+      .tree-node { min-width: 78px; padding: 4px 6px; }
+      .node-avatar-box { width: 36px; height: 36px; }
+      .node-title { font-size: 12.5px; }
+      .node-relation { font-size: 9.5px; }
+      .card-role-text { font-size: 19px; }
+    }
+
+    @media (max-width: 960px) {
+      .game-main { grid-template-columns: 1fr; }
+      .choice-cards-group { grid-template-columns: repeat(2, 1fr); }
+      .cards-action-layout { flex-direction: column; }
+      .submit-btn-box { width: 100%; }
+      .npc-avatar-box { width: min(320px, 80vw); height: min(320px, 40vh); }
+    }
+  </style>
+</head>
+<body>
+  <!-- 頂部功能工具列 -->
+  <header class="game-header">
+    <div class="game-title-group">
+      <div class="game-logo">🏡</div>
+      <div>
+        <h1 class="game-title">家族大搜查：親人稱謂大解密</h1>
+        <p class="game-subtitle">依據對談線索推論親屬稱謂・點亮家族族人樹狀圖</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <button class="tool-btn active" id="btn-zhuyin-toggle" title="切換注音符號輔助">🔤 注音：開</button>
+      <button class="tool-btn active" id="btn-speech-toggle" title="切換自動語音朗讀">🗣️ 朗讀：開</button>
+      <button class="tool-btn active" id="btn-mute" title="切換遊戲音效">🔊 音效：開</button>
+      <button class="tool-btn" id="btn-restart" title="重新開始探險">🔄 重新開始</button>
+    </div>
+  </header>
+
+  <!-- 主遊戲舞台 (左右分割，對應手繪圖草稿) -->
+  <main class="game-main">
+    <!-- 【左上：NPC 互動推論區】 -->
+    <section class="npc-stage-panel">
+      <div class="panel-header-badge">
+        <span>👤</span> 正在造訪的親人
+      </div>
+
+      <!-- 上方：對談泡泡 (自我介紹.json) -->
+      <div class="speech-bubble-container">
+        <div class="speech-bubble">
+          <div class="bubble-meta-tag">📄 自我介紹.json</div>
+          <div class="dialogue-text" id="dialogue-text">正在載入親人自我介紹...</div>
+        </div>
+
+        <div class="speech-actions">
+          <button class="speech-btn" id="btn-speak">🔊 再聽一次介紹 (Space)</button>
+          <button class="speech-btn" id="btn-hint">💡 提示線索 (3)</button>
+        </div>
+
+        <div class="hints-box" id="hints-box">
+          <div id="hints-list"></div>
+        </div>
+      </div>
+
+      <!-- 下方星號處：超大顯著的 NPC 手繪粉彩立繪展台 -->
+      <div class="npc-showcase-stage" id="npc-showcase-stage">
+        <div class="npc-avatar-box" id="npc-avatar-box"></div>
+      </div>
+    </section>
+
+    <!-- 【右上：找到多少家人 家族族人樹狀圖】 -->
+    <section class="tree-stage-panel">
+      <div class="tree-panel-header">
+        <h2 class="tree-stage-title">
+          <span>🌳</span> 找到多少家人
+        </h2>
+        <div class="tree-progress-badge">
+          <span>🌟 已點亮：</span>
+          <strong><span id="found-count">0</span> / <span id="total-count">16</span></strong>
+          <div class="tree-progress-bar-bg">
+            <div class="tree-progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 家族樹主容器 -->
+      <div class="family-tree-wrapper" id="family-tree-container"></div>
+    </section>
+  </main>
+
+  <!-- 【下方：稱謂卡牌選擇區 (手繪圖下方卡牌 + 確認送出箭頭按鈕)】 -->
+  <footer class="cards-dock">
+    <div class="dock-header">
+      <div class="dock-prompt">
+        <span>🃏</span> 請依據對話線索，推論出他是哪一位親人：
+      </div>
+      <div class="dock-shortcut-hint">
+        小提示：可按鍵盤 1~4 選牌，按 Enter 送出
+      </div>
+    </div>
+
+    <div class="cards-action-layout">
+      <!-- 4 張候選卡牌 -->
+      <div class="choice-cards-group" id="choice-cards-group"></div>
+
+      <!-- 確認送出按鈕 (手繪圖右下箭頭按鈕) -->
+      <div class="submit-btn-box">
+        <button class="submit-btn" id="btn-submit" disabled>
+          <span class="submit-btn-icon">↵</span>
+          <span>確認送出</span>
+          <span class="submit-btn-sub">(Enter)</span>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 浮動訊息反饋 (Toast) -->
+  <div class="feedback-toast" id="feedback-toast">
+    <span id="toast-icon">✨</span>
+    <span id="toast-msg"></span>
+  </div>
+
+  <!-- 全員找齊 大團圓勝利 Modal -->
+  <div class="victory-modal-overlay" id="victory-modal">
+    <div class="victory-card">
+      <div class="victory-trophy">🏆</div>
+      <h2 class="victory-title">太厲害了！家族大團圓！</h2>
+      <p class="victory-desc">
+        你已經順利解開所有親人的自我介紹線索，將家族樹上的每一盞燈全部點亮囉！<br>
+        大家都為你敏銳的推理與親屬稱謂知識感到驕傲！
+      </p>
+      <button class="victory-btn" id="btn-restart-victory">🎉 再玩一次家族大搜查</button>
+    </div>
+  </div>
+
+  <!-- 純原生常規 JavaScript（零依賴、非 module、無 CORS 限制、直接雙擊即開） -->
+  <script>
+    // ==========================================
+    // 1. 親屬角色資料庫 (對應 自我介紹.json，內建確保離線即開)
+    // ==========================================
+    const RELATIVES_DATA = [
+      {
+        id: "yeye",
+        role: "祖父（爺爺）",
+        shortRole: "爺爺",
+        zhuyin: "ㄗㄨˇ ㄈㄨˋ（ㄧㄝˊ ˙ㄧㄝ）",
+        side: "father",
+        generation: 1,
+        relation: "爸爸的爸爸",
+        treeNodeId: "node_yeye",
+        avatar: "grandpa_paternal",
+        dialogue: "我是你爸爸的父親喔！小時候你爸爸很皮，常常被我念呢！現在你長大了，每年過年我最期待看到你們回來陪我聊天、吃年夜飯。想一想，你該怎麼稱呼我呢？",
+        clues: ["我是爸爸那一邊的長輩（父系）", "我是你爸爸的爸爸", "大家平常習慣稱呼我為爺爺"],
+        distractors: ["祖父（外公）", "伯伯", "舅舅"]
+      },
+      {
+        id: "nainai",
+        role: "祖母（奶奶）",
+        shortRole: "奶奶",
+        zhuyin: "ㄗㄨˇ ㄇㄨˇ（ㄋㄞˇ ˙ㄋㄞ）",
+        side: "father",
+        generation: 1,
+        relation: "爸爸的媽媽",
+        treeNodeId: "node_nainai",
+        avatar: "grandma_paternal",
+        dialogue: "乖孫～我是你爸爸的母親！每次你來家裡，我都燉了你最喜歡吃的香菇雞湯。看到你吃得飽飽的、健康長大，我就好開心。猜猜我是誰？",
+        clues: ["我是爸爸那邊的女性長輩", "我是你爸爸的媽媽", "大家平時常親切稱呼我為奶奶"],
+        distractors: ["祖母（外婆）", "伯母", "阿姨"]
+      },
+      {
+        id: "waigong",
+        role: "祖父（外公）",
+        shortRole: "外公",
+        zhuyin: "ㄗㄨˇ ㄈㄨˋ（ㄨㄞˋ ㄍㄨㄥ）",
+        side: "mother",
+        generation: 1,
+        relation: "媽媽的爸爸",
+        treeNodeId: "node_waigong",
+        avatar: "grandpa_maternal",
+        dialogue: "你好呀！我是你媽媽的父親。你媽媽小時候最喜歡坐在我的腳踏車後座吹風。現在課本上也可以尊稱我為祖父喔！平時大家常怎麼稱呼我呢？",
+        clues: ["我是媽媽那一邊的長輩（母系）", "我是你媽媽的爸爸", "在日常習慣上通常稱為外公"],
+        distractors: ["祖父（爺爺）", "姑丈", "叔叔"]
+      },
+      {
+        id: "waipo",
+        role: "祖母（外婆）",
+        shortRole: "外婆",
+        zhuyin: "ㄗㄨˇ ㄇㄨˇ（ㄨㄞˋ ㄆㄛˊ）",
+        side: "mother",
+        generation: 1,
+        relation: "媽媽的媽媽",
+        treeNodeId: "node_waipo",
+        avatar: "waipo",
+        dialogue: "哈哈～我是你媽媽的母親喔！你媽媽長得很像我年輕的時候呢！每次你們回娘家，我都會準備好多好吃的點心給你。動動腦，你該叫我什麼？",
+        clues: ["我是媽媽那邊的女性長輩", "我是你媽媽的媽媽", "大家平時常親切稱呼我為外婆"],
+        distractors: ["祖母（奶奶）", "嬸嬸", "姑姑"]
+      },
+      {
+        id: "bobo",
+        role: "伯伯",
+        shortRole: "伯伯",
+        zhuyin: "ㄅㄛˊ ˙ㄅㄛ",
+        side: "father",
+        generation: 2,
+        relation: "爸爸的哥哥",
+        treeNodeId: "node_bobo",
+        avatar: "uncle_bobo",
+        dialogue: "哈哈！我是你爸爸的親哥哥！我們小時候在院子裡玩捉迷藏，你爸爸總是跑在我後頭。因為我年紀比你爸爸大，按照長幼排序，你應該叫我什麼呢？",
+        clues: ["我是爸爸那一邊的男性長輩", "我比你爸爸年紀還要大", "我的小孩是你的堂兄弟姐妹"],
+        distractors: ["叔叔", "舅舅", "姑丈"]
+      },
+      {
+        id: "bomu",
+        role: "伯母",
+        shortRole: "伯母",
+        zhuyin: "ㄅㄛˊ ㄇㄨˇ",
+        side: "father",
+        generation: 2,
+        relation: "爸爸哥哥的妻子（伯伯的太太）",
+        treeNodeId: "node_bomu",
+        avatar: "aunt_bomu",
+        dialogue: "你好呀！我是你伯伯的太太（也就是你爸爸哥哥的妻子）。我和伯伯常跟你們家聚餐，我的廚藝可是很受大家歡迎的喔！你該叫我什麼？",
+        clues: ["我是爸爸哥哥的妻子", "我的先生是你爸爸的哥哥（伯伯）", "我和嬸嬸不同，我是伯伯的伴侶"],
+        distractors: ["嬸嬸", "阿姨", "舅媽"]
+      },
+      {
+        id: "shushu",
+        role: "叔叔",
+        shortRole: "叔叔",
+        zhuyin: "ㄕㄨ ˙ㄕㄨ",
+        side: "father",
+        generation: 2,
+        relation: "爸爸的弟弟",
+        treeNodeId: "node_shushu",
+        avatar: "uncle_shushu",
+        dialogue: "嗨！我是你爸爸的親弟弟！我比你爸爸年輕，每次過年我都會帶最新發明的桌遊來找你們玩。猜猜看，爸爸的弟弟應該叫什麼？",
+        clues: ["我是爸爸那一邊的男性親人", "我比你爸爸年紀還要小", "我的小孩也是你的堂兄弟姐妹"],
+        distractors: ["伯伯", "舅舅", "姨丈"]
+      },
+      {
+        id: "shenshen",
+        role: "嬸嬸",
+        shortRole: "嬸嬸",
+        zhuyin: "ㄕㄣˇ ˙ㄕㄣ",
+        side: "father",
+        generation: 2,
+        relation: "爸爸弟弟的妻子（叔叔的太太）",
+        treeNodeId: "node_shenshen",
+        avatar: "aunt_shenshen",
+        dialogue: "哈囉！我是你叔叔的太太（爸爸弟弟的妻子）。每次叔叔帶你玩遊戲，我都在旁邊幫大家切水果泡茶。你應該怎麼稱呼我呢？",
+        clues: ["我是爸爸弟弟的妻子", "我的先生是你爸爸的弟弟（叔叔）", "我的孩子是你的堂兄弟姐妹"],
+        distractors: ["伯母", "舅媽", "阿姨"]
+      },
+      {
+        id: "gugu",
+        role: "姑姑",
+        shortRole: "姑姑",
+        zhuyin: "ㄍㄨ ˙ㄍㄨ",
+        side: "father",
+        generation: 2,
+        relation: "爸爸的姐妹",
+        treeNodeId: "node_gugu",
+        avatar: "aunt_gugu",
+        dialogue: "哈囉～我是你爸爸的親姐妹！我跟你爸爸感情特別好。特別提醒你喔，我的孩子跟你不同姓，所以他們是你的『表』兄弟姐妹喔！那我是你的什麼呢？",
+        clues: ["我是爸爸那一邊的女性親人", "我是你爸爸的姐妹", "我的孩子你要稱呼為表兄弟姐妹"],
+        distractors: ["阿姨", "舅媽", "伯母"]
+      },
+      {
+        id: "guzhang",
+        role: "姑丈",
+        shortRole: "姑丈",
+        zhuyin: "ㄍㄨ ㄓㄤˋ",
+        side: "father",
+        generation: 2,
+        relation: "姑姑的先生",
+        treeNodeId: "node_guzhang",
+        avatar: "uncle_guzhang",
+        dialogue: "你好！我是你姑姑的先生。每次家庭聚會我都負責開車載姑姑和孩子們一起回爺爺家。想一想，姑姑的丈夫該叫什麼？",
+        clues: ["我是姑姑的先生", "我是爸爸姐妹的配偶", "在親屬稱謂中有一個『姑』字"],
+        distractors: ["姨丈", "舅舅", "伯伯"]
+      },
+      {
+        id: "jiujiu",
+        role: "舅舅",
+        shortRole: "舅舅",
+        zhuyin: "ㄐㄧㄡˋ ˙ㄐㄧㄡ",
+        side: "mother",
+        generation: 2,
+        relation: "媽媽的兄弟",
+        treeNodeId: "node_jiujiu",
+        avatar: "uncle_jiujiu",
+        dialogue: "嗨！我是你媽媽的兄弟。小時候你媽媽常常跟我搶電視看呢！不管我是媽媽的哥哥還是弟弟，在中文裡都統一稱呼同一個名字喔！你該叫我什麼？",
+        clues: ["我是媽媽那一邊的男性長輩", "我是你媽媽的兄弟（哥哥或弟弟）", "我的小孩是你的表兄弟姐妹"],
+        distractors: ["伯伯", "叔叔", "姑丈"]
+      },
+      {
+        id: "jiuma",
+        role: "舅媽",
+        shortRole: "舅媽",
+        zhuyin: "ㄐㄧㄡˋ ㄇㄚ",
+        side: "mother",
+        generation: 2,
+        relation: "舅舅的太太",
+        treeNodeId: "node_jiuma",
+        avatar: "aunt_jiuma",
+        dialogue: "哈囉！我是你舅舅的太太。上次你們到外公家作客，我還烤了香甜的蛋糕給大家吃呢。猜猜看，舅舅的太太應該怎麼叫？",
+        clues: ["我是媽媽兄弟的妻子", "我的先生是你媽媽的兄弟（舅舅）", "我的孩子是你的表兄弟姐妹"],
+        distractors: ["阿姨", "伯母", "嬸嬸"]
+      },
+      {
+        id: "ayi",
+        role: "阿姨",
+        shortRole: "阿姨",
+        zhuyin: "ㄚ ㄧˊ",
+        side: "mother",
+        generation: 2,
+        relation: "媽媽的姐妹",
+        treeNodeId: "node_ayi",
+        avatar: "aunt_ayi",
+        dialogue: "哈囉小寶貝！我是你媽媽的姐妹喔！我和你媽媽長得非常神似，說話聲音也很像。我有空最喜歡帶你去逛書店了。你該怎麼稱呼我呢？",
+        clues: ["我是媽媽那一邊的女性親人", "我是你媽媽的姐妹", "我的孩子也是你的表兄弟姐妹"],
+        distractors: ["姑姑", "舅媽", "伯母"]
+      },
+      {
+        id: "yizhang",
+        role: "姨丈",
+        shortRole: "姨丈",
+        zhuyin: "ㄧˊ ㄓㄤˋ",
+        side: "mother",
+        generation: 2,
+        relation: "阿姨的先生",
+        treeNodeId: "node_yizhang",
+        avatar: "uncle_yizhang",
+        dialogue: "你好呀！我是你阿姨的先生。假日野餐時，我都負責搭帳篷和烤肉喔！想一想，阿姨的丈夫該怎麼稱呼呢？",
+        clues: ["我是阿姨的先生", "我是媽媽姐妹的配偶", "稱謂中有一個『姨』字"],
+        distractors: ["姑丈", "舅舅", "叔叔"]
+      },
+      {
+        id: "tang_bro",
+        role: "堂哥／堂弟",
+        shortRole: "堂兄弟",
+        zhuyin: "ㄊㄤˊ ㄍㄜ / ㄊㄤˊ ㄉㄧˋ",
+        side: "father",
+        generation: 3,
+        relation: "伯伯或叔叔的兒子",
+        treeNodeId: "node_tang_bro",
+        avatar: "cousin_tang_boy",
+        dialogue: "嘿！我的爸爸是你爸爸的兄弟（也就是你的伯伯或叔叔），我們同姓同宗族，過年都在老家祖堂一起放鞭炮喔！我們之間屬於哪一種兄弟關係呢？",
+        clues: ["我是伯伯或叔叔的兒子", "我和你同姓（同宗同堂）", "稱謂前面有一個『堂』字"],
+        distractors: ["表哥／表弟", "親兄弟", "叔叔"]
+      },
+      {
+        id: "biao_bro",
+        role: "表哥／表弟",
+        shortRole: "表兄弟",
+        zhuyin: "ㄅㄧㄠˇ ㄍㄜ / ㄅㄧㄠˇ ㄉㄧˋ",
+        side: "mother",
+        generation: 3,
+        relation: "姑姑、舅舅或阿姨的兒子",
+        treeNodeId: "node_biao_bro",
+        avatar: "cousin_biao_boy",
+        dialogue: "哈囉！我的媽媽是你爸爸的姐妹（姑姑），或者我媽媽是你舅舅/阿姨的孩子！我們常常一起打籃球，但我跟我爸爸姓，和你的姓氏不同。你該叫我什麼呢？",
+        clues: ["我是姑姑、舅舅或阿姨的兒子", "通常與你不同姓氏", "稱謂前面有一個『表』字"],
+        distractors: ["堂哥／堂弟", "伯伯", "親兄弟"]
+      }
+    ];
+
+    // ==========================================
+    // 2. 角色手繪粉彩去背圖資對應表 (assets/images/)
+    // ==========================================
+    const AVATAR_IMG_MAP = {
+      grandpa_paternal: 'yeye.png',
+      grandma_paternal: 'nainai.png',
+      grandpa_maternal: 'waigong.png',
+      waipo: 'waipo.png',
+      uncle_bobo: 'bobo.png',
+      aunt_bomu: 'bomu.png',
+      uncle_shushu: 'shushu.png',
+      aunt_shenshen: 'shenshen.png',
+      aunt_gugu: 'gugu.png',
+      uncle_guzhang: 'guzhang.png',
+      uncle_jiujiu: 'jiujiu.png',
+      aunt_jiuma: 'jiuma.png',
+      aunt_ayi: 'ayi.png',
+      uncle_yizhang: 'yizhang.png',
+      cousin_tang_boy: 'tang_bro.png',
+      cousin_biao_boy: 'biao_bro.png',
+      dad: 'dad.png',
+      mom: 'mom.png',
+      me: 'me.png',
+      siblings: 'siblings.png'
+    };
+
+    function getAvatarHtml(avatarKey, isUnlocked = false, isNpcLarge = false) {
+      const fileName = AVATAR_IMG_MAP[avatarKey];
+      if (fileName) {
+        const cls = isNpcLarge ? 'npc-avatar-img' : (isUnlocked ? 'avatar-img' : 'avatar-img-locked');
+        return `<img src="assets/images/${fileName}" class="${cls}" alt="${avatarKey}">`;
+      }
+      return getAvatarSvg(avatarKey, isUnlocked);
+    }
+
+    const AVATARS = {
+      grandpa_paternal: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><path d="M22,46 C20,24 80,24 78,46 C74,28 26,28 22,46 Z" fill="#cfd8dc"/><ellipse cx="50" cy="54" rx="26" ry="28" fill="#ffdfba"/><circle cx="38" cy="50" r="8" fill="#fff" fill-opacity="0.4" stroke="#78909c" stroke-width="2.5"/><circle cx="62" cy="50" r="8" fill="#fff" fill-opacity="0.4" stroke="#78909c" stroke-width="2.5"/><line x1="46" y1="50" x2="54" y2="50" stroke="#78909c" stroke-width="2.5"/><path d="M34,50 Q38,46 42,50" stroke="#37474f" stroke-width="2" fill="none"/><path d="M58,50 Q62,46 66,50" stroke="#37474f" stroke-width="2" fill="none"/><path d="M42,66 Q50,73 58,66" stroke="#c2185b" stroke-width="2.5" fill="none"/><path d="M43,62 Q50,60 57,62" stroke="#b0bec5" stroke-width="2.5" fill="none"/><path d="M26,82 Q50,96 74,82 L78,100 L22,100 Z" fill="#2e7d32"/></svg>`,
+      grandma_paternal: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><circle cx="26" cy="40" r="10" fill="#b0bec5"/><circle cx="36" cy="28" r="11" fill="#b0bec5"/><circle cx="50" cy="24" r="12" fill="#cfd8dc"/><circle cx="64" cy="28" r="11" fill="#b0bec5"/><circle cx="74" cy="40" r="10" fill="#b0bec5"/><ellipse cx="50" cy="55" rx="25" ry="27" fill="#ffdfba"/><path d="M34,49 Q38,44 42,49" stroke="#37474f" stroke-width="2.5" fill="none"/><path d="M58,49 Q62,44 66,49" stroke="#37474f" stroke-width="2.5" fill="none"/><path d="M42,65 Q50,73 58,65" stroke="#d81b60" stroke-width="2.5" fill="none"/><path d="M26,82 Q50,96 74,82 L78,100 L22,100 Z" fill="#c2185b"/></svg>`,
+      grandpa_maternal: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#f3e5f5" stroke="#ab47bc" stroke-width="4"/><path d="M24,42 C22,22 78,22 76,42 Z" fill="#90a4ae"/><ellipse cx="50" cy="54" rx="26" ry="27" fill="#ffdfba"/><rect x="30" y="44" width="16" height="13" rx="3" fill="#fff" fill-opacity="0.3" stroke="#ffb300" stroke-width="2"/><rect x="54" y="44" width="16" height="13" rx="3" fill="#fff" fill-opacity="0.3" stroke="#ffb300" stroke-width="2"/><line x1="46" y1="50" x2="54" y2="50" stroke="#ffb300" stroke-width="2"/><circle cx="38" cy="50" r="2.5" fill="#263238"/><circle cx="62" cy="50" r="2.5" fill="#263238"/><path d="M42,66 Q50,74 58,66" stroke="#c2185b" stroke-width="2.5" fill="none"/><path d="M25,82 Q50,95 75,82 L80,100 L20,100 Z" fill="#7b1fa2"/></svg>`,
+      waipo: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#f3e5f5" stroke="#ab47bc" stroke-width="4"/><circle cx="50" cy="22" r="11" fill="#78909c"/><path d="M24,45 C20,24 80,24 76,45 Z" fill="#607d8b"/><ellipse cx="50" cy="55" rx="25" ry="26" fill="#ffe0b2"/><path d="M35,50 Q39,46 43,50" stroke="#263238" stroke-width="2.5" fill="none"/><path d="M57,50 Q61,46 65,50" stroke="#263238" stroke-width="2.5" fill="none"/><path d="M41,65 Q50,74 59,65" stroke="#ad1457" stroke-width="3" fill="none"/><path d="M26,82 Q50,96 74,82 L78,100 L22,100 Z" fill="#8e24aa"/></svg>`,
+      uncle_bobo: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><path d="M24,44 C22,20 78,20 76,44 Z" fill="#37474f"/><ellipse cx="50" cy="54" rx="25" ry="26" fill="#ffdfba"/><circle cx="38" cy="51" r="3" fill="#263238"/><circle cx="62" cy="51" r="3" fill="#263238"/><path d="M42,65 Q50,72 58,65" stroke="#bf360c" stroke-width="3" fill="none"/><path d="M24,82 Q50,95 76,82 L80,100 L20,100 Z" fill="#1b5e20"/></svg>`,
+      aunt_bomu: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><path d="M22,50 C18,22 82,22 78,50 Z" fill="#4e342e"/><ellipse cx="50" cy="54" rx="24" ry="26" fill="#ffe0b2"/><circle cx="37" cy="50" r="3" fill="#263238"/><circle cx="63" cy="50" r="3" fill="#263238"/><path d="M43,65 Q50,71 57,65" stroke="#d81b60" stroke-width="2.5" fill="none"/><path d="M25,82 Q50,94 75,82 L78,100 L22,100 Z" fill="#388e3c"/></svg>`,
+      uncle_shushu: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><path d="M25,42 C24,20 76,20 75,42 Z" fill="#212121"/><ellipse cx="50" cy="54" rx="24" ry="25" fill="#ffdfba"/><circle cx="38" cy="49" r="3.2" fill="#212121"/><circle cx="62" cy="49" r="3.2" fill="#212121"/><path d="M40,63 Q50,72 60,63" stroke="#e65100" stroke-width="3" fill="none"/><path d="M25,82 Q50,95 75,82 L79,100 L21,100 Z" fill="#43a047"/></svg>`,
+      aunt_shenshen: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><path d="M22,46 C20,20 80,20 78,46 Z" fill="#5d4037"/><ellipse cx="50" cy="53" rx="23" ry="25" fill="#ffdfba"/><circle cx="38" cy="49" r="3" fill="#263238"/><circle cx="62" cy="49" r="3" fill="#263238"/><path d="M43,63 Q50,70 57,63" stroke="#c2185b" stroke-width="2.5" fill="none"/><path d="M25,82 Q50,95 75,82 L78,100 L22,100 Z" fill="#66bb6a"/></svg>`,
+      aunt_gugu: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><path d="M20,52 C18,20 82,20 80,52 Z" fill="#3e2723"/><ellipse cx="50" cy="53" rx="24" ry="25" fill="#ffe0b2"/><circle cx="37" cy="48" r="3" fill="#212121"/><circle cx="63" cy="48" r="3" fill="#212121"/><path d="M42,63 Q50,71 58,63" stroke="#d81b60" stroke-width="3" fill="none"/><path d="M24,82 Q50,94 76,82 L80,100 L20,100 Z" fill="#2e7d32"/></svg>`,
+      uncle_guzhang: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><path d="M24,42 C22,22 78,22 76,42 Z" fill="#263238"/><ellipse cx="50" cy="53" rx="25" ry="26" fill="#ffdfba"/><rect x="30" y="44" width="16" height="12" rx="3" fill="#fff" fill-opacity="0.3" stroke="#37474f" stroke-width="2.5"/><rect x="54" y="44" width="16" height="12" rx="3" fill="#fff" fill-opacity="0.3" stroke="#37474f" stroke-width="2.5"/><circle cx="38" cy="50" r="2.5" fill="#212121"/><circle cx="62" cy="50" r="2.5" fill="#212121"/><path d="M43,65 Q50,71 57,65" stroke="#bf360c" stroke-width="2.5" fill="none"/><path d="M25,82 Q50,95 75,82 L79,100 L21,100 Z" fill="#1b5e20"/></svg>`,
+      uncle_jiujiu: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#f3e5f5" stroke="#ab47bc" stroke-width="4"/><path d="M24,40 C22,18 78,18 76,40 Z" fill="#263238"/><ellipse cx="50" cy="53" rx="24" ry="25" fill="#ffdfba"/><circle cx="38" cy="49" r="3.2" fill="#212121"/><circle cx="62" cy="49" r="3.2" fill="#212121"/><path d="M40,62 Q50,72 60,62" stroke="#8e24aa" stroke-width="3" fill="none"/><path d="M25,82 Q50,95 75,82 L79,100 L21,100 Z" fill="#6a1b9a"/></svg>`,
+      aunt_jiuma: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#f3e5f5" stroke="#ab47bc" stroke-width="4"/><path d="M22,48 C20,20 80,20 78,48 Z" fill="#4e342e"/><ellipse cx="50" cy="53" rx="23" ry="25" fill="#ffe0b2"/><circle cx="37" cy="49" r="3" fill="#212121"/><circle cx="63" cy="49" r="3" fill="#212121"/><path d="M42,63 Q50,71 58,63" stroke="#ad1457" stroke-width="2.5" fill="none"/><path d="M25,82 Q50,95 75,82 L79,100 L21,100 Z" fill="#8e24aa"/></svg>`,
+      aunt_ayi: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#f3e5f5" stroke="#ab47bc" stroke-width="4"/><path d="M23,46 C20,20 80,20 77,46 Z" fill="#3e2723"/><ellipse cx="50" cy="53" rx="24" ry="25" fill="#ffe0b2"/><circle cx="38" cy="48" r="3" fill="#212121"/><circle cx="62" cy="48" r="3" fill="#212121"/><path d="M41,62 Q50,72 59,62" stroke="#d81b60" stroke-width="3" fill="none"/><path d="M25,82 Q50,95 75,82 L79,100 L21,100 Z" fill="#ab47bc"/></svg>`,
+      uncle_yizhang: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#f3e5f5" stroke="#ab47bc" stroke-width="4"/><path d="M25,42 C24,20 76,20 75,42 Z" fill="#37474f"/><ellipse cx="50" cy="54" rx="25" ry="26" fill="#ffdfba"/><circle cx="38" cy="50" r="3" fill="#212121"/><circle cx="62" cy="50" r="2.5" fill="#212121"/><path d="M42,65 Q50,72 58,65" stroke="#4a148c" stroke-width="2.5" fill="none"/><path d="M25,82 Q50,95 75,82 L79,100 L21,100 Z" fill="#7b1fa2"/></svg>`,
+      cousin_tang_boy: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#e8f5e9" stroke="#4caf50" stroke-width="4"/><path d="M24,40 C22,22 78,22 76,40 Z" fill="#1b5e20"/><ellipse cx="50" cy="54" rx="23" ry="24" fill="#ffdfba"/><circle cx="37" cy="50" r="4" fill="#212121"/><circle cx="63" cy="50" r="4" fill="#212121"/><path d="M40,64 Q50,74 60,64" stroke="#e65100" stroke-width="3" fill="none"/><path d="M26,82 Q50,95 74,82 L78,100 L22,100 Z" fill="#4caf50"/></svg>`,
+      cousin_biao_boy: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#f3e5f5" stroke="#ab47bc" stroke-width="4"/><path d="M25,38 C24,20 76,20 75,38 Z" fill="#4e342e"/><ellipse cx="50" cy="54" rx="23" ry="24" fill="#ffdfba"/><circle cx="37" cy="50" r="4" fill="#212121"/><circle cx="63" cy="50" r="4" fill="#212121"/><path d="M41,64 Q50,73 59,64" stroke="#8e24aa" stroke-width="3" fill="none"/><path d="M26,82 Q50,95 74,82 L78,100 L22,100 Z" fill="#ba68c8"/></svg>`,
+      dad: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#fff8e1" stroke="#ffa000" stroke-width="4"/><path d="M25,42 C24,20 76,20 75,42 Z" fill="#37474f"/><ellipse cx="50" cy="54" rx="24" ry="25" fill="#ffdfba"/><circle cx="38" cy="50" r="3.2" fill="#212121"/><circle cx="62" cy="50" r="3.2" fill="#212121"/><path d="M41,64 Q50,72 59,64" stroke="#e65100" stroke-width="3" fill="none"/><path d="M25,82 Q50,95 75,82 L79,100 L21,100 Z" fill="#f57c00"/></svg>`,
+      mom: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#fff8e1" stroke="#ffa000" stroke-width="4"/><path d="M22,48 C20,20 80,20 78,48 Z" fill="#4e342e"/><ellipse cx="50" cy="53" rx="23" ry="25" fill="#ffe0b2"/><circle cx="38" cy="49" r="3" fill="#212121"/><circle cx="62" cy="49" r="3" fill="#212121"/><path d="M42,63 Q50,71 58,63" stroke="#e91e63" stroke-width="3" fill="none"/><path d="M25,82 Q50,95 75,82 L79,100 L21,100 Z" fill="#ff7043"/></svg>`,
+      me: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#fff3e0" stroke="#ff9800" stroke-width="5"/><path d="M24,40 C22,18 78,18 76,40 Z" fill="#3e2723"/><ellipse cx="50" cy="54" rx="24" ry="24" fill="#ffdfba"/><circle cx="37" cy="49" r="4.5" fill="#212121"/><circle cx="63" cy="49" r="4.5" fill="#212121"/><path d="M41,63 Q50,74 59,63" stroke="#e65100" stroke-width="3.5" fill="none"/><path d="M26,82 Q50,95 74,82 L78,100 L22,100 Z" fill="#ff9800"/></svg>`,
+      siblings: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#fff8e1" stroke="#ffa000" stroke-width="4"/><circle cx="38" cy="44" r="14" fill="#ffcc80"/><circle cx="62" cy="48" r="13" fill="#ffe082"/><path d="M22,82 Q38,92 50,84 L50,100 L20,100 Z" fill="#fb8c00"/><path d="M50,84 Q62,92 78,82 L80,100 L50,100 Z" fill="#fbc02d"/></svg>`,
+      locked: `<svg viewBox="0 0 100 100" class="avatar-svg"><circle cx="50" cy="50" r="46" fill="#eceff1" stroke="#b0bec5" stroke-width="3" stroke-dasharray="5,4"/><circle cx="50" cy="40" r="16" fill="#cfd8dc"/><path d="M30,84 Q50,92 70,84 L74,100 L26,100 Z" fill="#b0bec5"/><text x="50" y="58" font-size="26" font-weight="900" fill="#78909c" text-anchor="middle" font-family="sans-serif">？</text></svg>`
+    };
+
+    function getAvatarSvg(avatarKey, isUnlocked = false) {
+      if (!isUnlocked) return AVATARS.locked;
+      return AVATARS[avatarKey] || AVATARS.locked;
+    }
+
+    // ==========================================
+    // 3. Web Audio 音效引擎與 MP3 音效播放
+    // ==========================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = false;
+        this.speechEnabled = true;
+        this.synth = window.speechSynthesis || null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) this.ctx = new AudioContextClass();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // 優先載入播放 MP3，若環境或政策限制則無縫啟用原生 Web Audio 備援合成
+      playAudioFile(src, fallbackFn) {
+        if (this.isMuted) return;
+        this.init();
+        try {
+          const audio = new Audio(src);
+          audio.volume = 0.85;
+          const promise = audio.play();
+          if (promise !== undefined) {
+            promise.catch(() => {
+              if (fallbackFn) fallbackFn.call(this);
+            });
+          }
+        } catch (e) {
+          if (fallbackFn) fallbackFn.call(this);
+        }
+      }
+
+      playClick() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const now = this.ctx.currentTime;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.05);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      }
+
+      // 答對音效：清脆悅耳的「叮咚叮咚！」(Ding-Dong Ding-Dong)
+      playCorrect() {
+        if (this.isMuted) return;
+        this.playAudioFile('assets/sounds/dingdong.mp3', () => this.synthesizeDingDong());
+      }
+
+      synthesizeDingDong() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const playChime = (freq, t, dur, vol) => {
+          // 基頻音
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(freq, t);
+          gain1.gain.setValueAtTime(vol, t);
+          gain1.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(t);
+          osc1.stop(t + dur);
+
+          // 晶瑩泛音 (2.76 倍頻金屬管鐘共鳴)
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(freq * 2.76, t);
+          gain2.gain.setValueAtTime(vol * 0.35, t);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.45);
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(t);
+          osc2.stop(t + dur * 0.45);
+        };
+
+        // 第 1 遍「叮咚」 (叮: 880Hz / 咚: 587.33Hz)
+        playChime(880.00, now + 0.00, 0.35, 0.22);
+        playChime(587.33, now + 0.22, 0.45, 0.25);
+
+        // 第 2 遍「叮咚」 (叮: 880Hz / 咚: 587.33Hz，悠揚延綿)
+        playChime(880.00, now + 0.48, 0.35, 0.24);
+        playChime(587.33, now + 0.70, 0.75, 0.28);
+      }
+
+      // 答錯音效：生動溫和的「嘟嘟！」(Du-Du)
+      playWrong() {
+        if (this.isMuted) return;
+        this.playAudioFile('assets/sounds/dudu.mp3', () => this.synthesizeDuDu());
+      }
+
+      synthesizeDuDu() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const playBuzz = (t, dur) => {
+          // 雙振盪微失諧 (150Hz + 158Hz) 營造經典益智失敗提示音
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const filter = this.ctx.createBiquadFilter();
+
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(1000, t);
+
+          osc1.type = 'sawtooth';
+          osc1.frequency.setValueAtTime(150, t);
+          osc2.type = 'square';
+          osc2.frequency.setValueAtTime(158, t);
+
+          gain.gain.setValueAtTime(0.001, t);
+          gain.gain.linearRampToValueAtTime(0.18, t + 0.008);
+          gain.gain.setValueAtTime(0.18, t + dur - 0.02);
+          gain.gain.linearRampToValueAtTime(0.001, t + dur);
+
+          osc1.connect(filter);
+          osc2.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc1.start(t);
+          osc2.start(t);
+          osc1.stop(t + dur);
+          osc2.stop(t + dur);
+        };
+
+        // 第 1 聲「嘟」 (0.18s)
+        playBuzz(now + 0.00, 0.18);
+        // 間隔 80ms 後第 2 聲「嘟」 (0.24s)
+        playBuzz(now + 0.26, 0.24);
+      }
+
+      playVictory() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const melody = [
+          { f: 523.25, d: 0.12 }, { f: 523.25, d: 0.12 }, { f: 523.25, d: 0.12 },
+          { f: 659.25, d: 0.25 }, { f: 783.99, d: 0.25 }, { f: 1046.50, d: 0.6 }
+        ];
+        let t = this.ctx.currentTime;
+        melody.forEach(item => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(item.f, t);
+          gain.gain.setValueAtTime(0.25, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + item.d);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + item.d);
+          t += item.d + 0.04;
+        });
+      }
+
+      speak(text, onEnd) {
+        if (!this.speechEnabled || !this.synth) {
+          if (onEnd) onEnd();
+          return;
+        }
+        this.synth.cancel();
+        const clean = text.replace(/（[^）]*）/g, '').replace(/[「」]/g, '');
+        const utter = new SpeechSynthesisUtterance(clean);
+        utter.lang = 'zh-TW';
+        utter.rate = 0.95;
+        const voices = this.synth.getVoices();
+        const zh = voices.find(v => v.lang === 'zh-TW' || v.lang.startsWith('zh'));
+        if (zh) utter.voice = zh;
+        utter.onend = () => { if (onEnd) onEnd(); };
+        utter.onerror = () => { if (onEnd) onEnd(); };
+        this.synth.speak(utter);
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // ==========================================
+    // 4. 家族樹節點結構與渲染
+    // ==========================================
+    const TREE_NODES = {
+      node_yeye: { id: 'node_yeye', title: '祖父（爺爺）', relation: '爸爸的爸爸', side: 'father', avatarKey: 'grandpa_paternal' },
+      node_nainai: { id: 'node_nainai', title: '祖母（奶奶）', relation: '爸爸的媽媽', side: 'father', avatarKey: 'grandma_paternal' },
+      node_bobo: { id: 'node_bobo', title: '伯伯', relation: '爸爸的哥哥', side: 'father', avatarKey: 'uncle_bobo' },
+      node_bomu: { id: 'node_bomu', title: '伯母', relation: '伯伯的太太', side: 'father', avatarKey: 'aunt_bomu' },
+      node_shushu: { id: 'node_shushu', title: '叔叔', relation: '爸爸的弟弟', side: 'father', avatarKey: 'uncle_shushu' },
+      node_shenshen: { id: 'node_shenshen', title: '嬸嬸', relation: '叔叔的太太', side: 'father', avatarKey: 'aunt_shenshen' },
+      node_gugu: { id: 'node_gugu', title: '姑姑', relation: '爸爸的姐妹', side: 'father', avatarKey: 'aunt_gugu' },
+      node_guzhang: { id: 'node_guzhang', title: '姑丈', relation: '姑姑的先生', side: 'father', avatarKey: 'uncle_guzhang' },
+      node_tang_bro: { id: 'node_tang_bro', title: '堂兄弟姐妹', relation: '伯父叔叔的子女', side: 'father', avatarKey: 'cousin_tang_boy' },
+
+      node_dad: { id: 'node_dad', title: '爸爸', relation: '我的父親', side: 'core', avatarKey: 'dad', isDefaultUnlocked: true },
+      node_mom: { id: 'node_mom', title: '媽媽', relation: '我的母親', side: 'core', avatarKey: 'mom', isDefaultUnlocked: true },
+      node_me: { id: 'node_me', title: '我', relation: '中心探索者', side: 'core', avatarKey: 'me', isDefaultUnlocked: true },
+      node_siblings: { id: 'node_siblings', title: '親兄弟姐妹', relation: '我的手足', side: 'core', avatarKey: 'siblings', isDefaultUnlocked: true },
+
+      node_waigong: { id: 'node_waigong', title: '祖父（外公）', relation: '媽媽的爸爸', side: 'mother', avatarKey: 'grandpa_maternal' },
+      node_waipo: { id: 'node_waipo', title: '祖母（外婆）', relation: '媽媽的媽媽', side: 'mother', avatarKey: 'waipo' },
+      node_jiujiu: { id: 'node_jiujiu', title: '舅舅', relation: '媽媽的兄弟', side: 'mother', avatarKey: 'uncle_jiujiu' },
+      node_jiuma: { id: 'node_jiuma', title: '舅媽', relation: '舅舅的太太', side: 'mother', avatarKey: 'aunt_jiuma' },
+      node_ayi: { id: 'node_ayi', title: '阿姨', relation: '媽媽的姐妹', side: 'mother', avatarKey: 'aunt_ayi' },
+      node_yizhang: { id: 'node_yizhang', title: '姨丈', relation: '阿姨的先生', side: 'mother', avatarKey: 'uncle_yizhang' },
+      node_biao_bro: { id: 'node_biao_bro', title: '表兄弟姐妹', relation: '姑/舅/姨的子女', side: 'mother', avatarKey: 'cousin_biao_boy' }
+    };
+
+    let unlockedNodeIds = new Set();
+    let currentTargetNodeId = null;
+
+    function renderFamilyTree(container) {
+      container.innerHTML = `
+        <div class="tree-legend">
+          <span class="legend-item legend-father"><span class="legend-dot"></span> 爸爸的親人（綠）</span>
+          <span class="legend-item legend-core"><span class="legend-dot"></span> 核心家族（橘）</span>
+          <span class="legend-item legend-mother"><span class="legend-dot"></span> 媽媽的親人（紫）</span>
+        </div>
+        <div class="tree-layout">
+          <!-- 爸爸支系 (左翼) -->
+          <div class="tree-branch branch-father">
+            <div class="branch-label">爸爸的親人</div>
+            <div class="tree-row">
+              <div class="couple-group">
+                ${createNodeMarkup('node_yeye')}
+                <span class="couple-connector">⚭</span>
+                ${createNodeMarkup('node_nainai')}
+              </div>
+            </div>
+            <div class="tree-row">
+              <div class="relative-pair">${createNodeMarkup('node_bobo')}${createNodeMarkup('node_bomu')}</div>
+              <div class="relative-pair">${createNodeMarkup('node_shushu')}${createNodeMarkup('node_shenshen')}</div>
+              <div class="relative-pair">${createNodeMarkup('node_gugu')}${createNodeMarkup('node_guzhang')}</div>
+            </div>
+            <div class="tree-row">${createNodeMarkup('node_tang_bro')}</div>
+          </div>
+
+          <!-- 中央核心 -->
+          <div class="tree-branch branch-core">
+            <div class="branch-label">核心家庭</div>
+            <div class="tree-row">
+              <div class="core-tier-badge">🏠 直系親屬</div>
+            </div>
+            <div class="tree-row">
+              <div class="couple-group">
+                ${createNodeMarkup('node_dad')}
+                <span class="couple-connector">⚭</span>
+                ${createNodeMarkup('node_mom')}
+              </div>
+            </div>
+            <div class="tree-row">
+              <div class="me-group">
+                ${createNodeMarkup('node_me')}
+                ${createNodeMarkup('node_siblings')}
+              </div>
+            </div>
+          </div>
+
+          <!-- 媽媽支系 (右翼) -->
+          <div class="tree-branch branch-mother">
+            <div class="branch-label">媽媽的親人</div>
+            <div class="tree-row">
+              <div class="couple-group">
+                ${createNodeMarkup('node_waigong')}
+                <span class="couple-connector">⚭</span>
+                ${createNodeMarkup('node_waipo')}
+              </div>
+            </div>
+            <div class="tree-row">
+              <div class="relative-pair">${createNodeMarkup('node_jiujiu')}${createNodeMarkup('node_jiuma')}</div>
+              <div class="relative-pair">${createNodeMarkup('node_ayi')}${createNodeMarkup('node_yizhang')}</div>
+            </div>
+            <div class="tree-row">${createNodeMarkup('node_biao_bro')}</div>
+          </div>
+        </div>
+      `;
+
+      container.querySelectorAll('.tree-node').forEach(el => {
+        el.onclick = () => {
+          const id = el.dataset.id;
+          const node = TREE_NODES[id];
+          const isUnlocked = node.isDefaultUnlocked || unlockedNodeIds.has(id);
+          if (isUnlocked) {
+            sound.playClick();
+            showToast(`✨【${node.title}】是 ${node.relation}！`, 'correct');
+          } else {
+            showToast(`🔒 這位親人還沒點亮喔！快從 NPC 對話推論出他吧！`, 'wrong');
+          }
+        };
+      });
+    }
+
+    function createNodeMarkup(nodeId) {
+      const node = TREE_NODES[nodeId];
+      if (!node) return '';
+      const isUnlocked = node.isDefaultUnlocked || unlockedNodeIds.has(nodeId);
+      const isTarget = (currentTargetNodeId === nodeId);
+      let stateClass = isUnlocked ? 'node-unlocked' : 'node-locked';
+      if (isTarget) stateClass += ' node-target-pulse';
+      const avatarHtml = getAvatarHtml(node.avatarKey, isUnlocked, false);
+      const title = isUnlocked ? node.title : (isTarget ? '🔍 猜猜他是誰' : '？？？');
+      const relation = isUnlocked ? node.relation : '尚未解鎖';
+
+      return `
+        <div class="tree-node ${node.side}-node ${stateClass}" id="${nodeId}" data-id="${nodeId}">
+          <div class="node-avatar-box">
+            ${avatarHtml}
+            ${isUnlocked ? '<span class="light-badge">💡</span>' : '<span class="lock-badge">🔒</span>'}
+          </div>
+          <div class="node-info">
+            <div class="node-title">${title}</div>
+            <div class="node-relation">${relation}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setTreeTarget(nodeId) {
+      if (currentTargetNodeId) {
+        const prev = document.getElementById(currentTargetNodeId);
+        if (prev) prev.classList.remove('node-target-pulse');
+      }
+      currentTargetNodeId = nodeId;
+      if (nodeId) {
+        const cur = document.getElementById(nodeId);
+        if (cur) {
+          cur.classList.add('node-target-pulse');
+          cur.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    }
+
+    function unlockTreeNode(nodeId) {
+      unlockedNodeIds.add(nodeId);
+      const nodeEl = document.getElementById(nodeId);
+      if (nodeEl) {
+        nodeEl.classList.remove('node-locked', 'node-target-pulse');
+        nodeEl.classList.add('node-unlocked', 'node-just-lit');
+        const node = TREE_NODES[nodeId];
+        if (node) {
+          nodeEl.querySelector('.node-avatar-box').innerHTML = `${getAvatarHtml(node.avatarKey, true, false)}<span class="light-badge">⭐</span>`;
+          nodeEl.querySelector('.node-title').textContent = node.title;
+          nodeEl.querySelector('.node-relation').textContent = node.relation;
+        }
+        setTimeout(() => nodeEl.classList.remove('node-just-lit'), 1400);
+      }
+    }
+
+    // ==========================================
+    // 5. 遊戲主流程管理器
+    // ==========================================
+    let questions = [];
+    let currentIndex = 0;
+    let currentCards = [];
+    let selectedOption = null;
+    let hintStep = 0;
+    let showZhuyin = true;
+    let isSubmitting = false;
+
+    // DOM 元素
+    const elNpcAvatarBox = document.getElementById('npc-avatar-box');
+    const elDialogueText = document.getElementById('dialogue-text');
+    const elBtnSpeak = document.getElementById('btn-speak');
+    const elBtnHint = document.getElementById('btn-hint');
+    const elHintsBox = document.getElementById('hints-box');
+    const elHintsList = document.getElementById('hints-list');
+    const elTreeContainer = document.getElementById('family-tree-container');
+    const elFoundCount = document.getElementById('found-count');
+    const elTotalCount = document.getElementById('total-count');
+    const elProgressBarFill = document.getElementById('progress-bar-fill');
+    const elChoiceCardsGroup = document.getElementById('choice-cards-group');
+    const elBtnSubmit = document.getElementById('btn-submit');
+    const elFeedbackToast = document.getElementById('feedback-toast');
+    const elToastIcon = document.getElementById('toast-icon');
+    const elToastMsg = document.getElementById('toast-msg');
+    const elVictoryModal = document.getElementById('victory-modal');
+
+    function initGame() {
+      unlockedNodeIds.clear();
+      currentIndex = 0;
+      questions = [...RELATIVES_DATA].sort(() => Math.random() - 0.5);
+      renderFamilyTree(elTreeContainer);
+      updateProgressUI();
+      loadCurrentQuestion();
+    }
+
+    function loadCurrentQuestion() {
+      if (currentIndex >= questions.length) {
+        triggerVictory();
+        return;
+      }
+      isSubmitting = false;
+      selectedOption = null;
+      elBtnSubmit.disabled = true;
+      hintStep = 0;
+      elHintsBox.classList.remove('show');
+      elHintsList.innerHTML = '';
+      elBtnHint.textContent = '💡 提示線索 (3)';
+
+      const q = questions[currentIndex];
+
+      // 1. 更新 NPC 大頭像 (使用粉彩手繪透明圖檔)
+      elNpcAvatarBox.innerHTML = `
+        ${getAvatarHtml(q.avatar, true, true)}
+        <span class="npc-tag">${q.relation}</span>
+      `;
+
+      // 2. 更新對談泡泡
+      elDialogueText.textContent = q.dialogue;
+
+      // 3. 樹狀圖目標亮燈引導
+      setTreeTarget(q.treeNodeId);
+
+      // 4. 生成 4 張候選卡牌
+      const options = [
+        { text: q.role, isCorrect: true, zhuyin: q.zhuyin },
+        ...q.distractors.map(d => ({ text: d, isCorrect: false, zhuyin: '' }))
+      ].sort(() => Math.random() - 0.5);
+      currentCards = options;
+
+      renderCards();
+
+      // 5. 自動朗讀
+      if (sound.speechEnabled) {
+        playDialogueSpeech();
+      }
+    }
+
+    function renderCards() {
+      elChoiceCardsGroup.innerHTML = '';
+      currentCards.forEach((card, idx) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'choice-card' + (selectedOption === card ? ' selected' : '');
+        let zhuyinHtml = '';
+        if (showZhuyin) {
+          const match = RELATIVES_DATA.find(r => r.role === card.text);
+          const z = card.zhuyin || (match ? match.zhuyin : '');
+          if (z) zhuyinHtml = `<div class="card-zhuyin">${z}</div>`;
+        }
+
+        cardEl.innerHTML = `
+          <span class="card-num-badge">${idx + 1}</span>
+          <div class="card-role-text">${card.text}</div>
+          ${zhuyinHtml}
+        `;
+
+        cardEl.onclick = () => {
+          if (isSubmitting) return;
+          sound.init();
+          // 若已選中該卡牌，再次點擊等同送出，觸控螢幕操作極為直觀
+          if (selectedOption === card) {
+            submitAnswer();
+            return;
+          }
+          sound.playClick();
+          selectedOption = card;
+          elBtnSubmit.disabled = false;
+          renderCards();
+        };
+
+        elChoiceCardsGroup.appendChild(cardEl);
+      });
+    }
+
+    function submitAnswer() {
+      if (!selectedOption || isSubmitting) return;
+      const q = questions[currentIndex];
+      isSubmitting = true;
+
+      if (selectedOption.text === q.role) {
+        // 答對！
+        sound.playCorrect();
+        unlockTreeNode(q.treeNodeId);
+        updateProgressUI();
+        showToast(`🎉 答對了！恭喜認出【${q.role}】！`, 'correct');
+
+        setTimeout(() => {
+          currentIndex++;
+          loadCurrentQuestion();
+        }, 1500);
+      } else {
+        // 答錯！
+        sound.playWrong();
+        showToast(`🤔 差一點點喔！再仔細讀讀對話中的線索吧！`, 'wrong');
+        revealNextHint();
+        setTimeout(() => { isSubmitting = false; }, 800);
+      }
+    }
+
+    function revealNextHint() {
+      const q = questions[currentIndex];
+      if (!q || !q.clues) return;
+      if (hintStep < q.clues.length) {
+        hintStep++;
+        elHintsBox.classList.add('show');
+        const item = document.createElement('div');
+        item.className = 'hint-item';
+        item.innerHTML = `🔍 <strong>線索 ${hintStep}：</strong> ${q.clues[hintStep - 1]}`;
+        elHintsList.appendChild(item);
+        elBtnHint.textContent = `💡 提示線索 (${q.clues.length - hintStep})`;
+      } else {
+        showToast('已揭示全部提示囉！看看樹狀圖的位置想一想～', 'correct');
+      }
+    }
+
+    function playDialogueSpeech() {
+      const q = questions[currentIndex];
+      if (!q) return;
+      elBtnSpeak.classList.add('btn-speaking');
+      sound.speak(q.dialogue, () => {
+        elBtnSpeak.classList.remove('btn-speaking');
+      });
+    }
+
+    function updateProgressUI() {
+      const count = unlockedNodeIds.size;
+      const total = RELATIVES_DATA.length;
+      elFoundCount.textContent = count;
+      elTotalCount.textContent = total;
+      elProgressBarFill.style.width = `${Math.round((count / total) * 100)}%`;
+    }
+
+    function showToast(msg, type = 'correct') {
+      elToastMsg.textContent = msg;
+      elToastIcon.textContent = type === 'correct' ? '🌟' : '💡';
+      elFeedbackToast.className = `feedback-toast show ${type}`;
+      setTimeout(() => elFeedbackToast.classList.remove('show'), 2200);
+    }
+
+    function triggerVictory() {
+      sound.playVictory();
+      elVictoryModal.classList.add('show');
+    }
+
+    // ==========================================
+    // 6. 事件監聽與按鈕綁定
+    // ==========================================
+    elBtnSubmit.onclick = submitAnswer;
+    elBtnSpeak.onclick = () => { sound.playClick(); playDialogueSpeech(); };
+    elBtnHint.onclick = () => { sound.playClick(); revealNextHint(); };
+    document.getElementById('btn-restart').onclick = () => { sound.playClick(); initGame(); };
+    document.getElementById('btn-restart-victory').onclick = () => {
+      sound.playClick();
+      elVictoryModal.classList.remove('show');
+      initGame();
+    };
+
+    // 頂部控制開關
+    const btnMute = document.getElementById('btn-mute');
+    btnMute.onclick = () => {
+      sound.isMuted = !sound.isMuted;
+      btnMute.classList.toggle('active', !sound.isMuted);
+      btnMute.innerHTML = sound.isMuted ? '🔇 音效：關' : '🔊 音效：開';
+    };
+
+    const btnSpeech = document.getElementById('btn-speech-toggle');
+    btnSpeech.onclick = () => {
+      sound.speechEnabled = !sound.speechEnabled;
+      btnSpeech.classList.toggle('active', sound.speechEnabled);
+      btnSpeech.innerHTML = sound.speechEnabled ? '🗣️ 朗讀：開' : '🤐 朗讀：關';
+      if (!sound.speechEnabled && sound.synth) sound.synth.cancel();
+    };
+
+    const btnZhuyin = document.getElementById('btn-zhuyin-toggle');
+    btnZhuyin.onclick = () => {
+      sound.playClick();
+      showZhuyin = !showZhuyin;
+      btnZhuyin.classList.toggle('active', showZhuyin);
+      btnZhuyin.innerHTML = showZhuyin ? '🔤 注音：開' : '🔤 注音：關';
+      renderCards();
+    };
+
+    // 鍵盤快速鍵
+    window.addEventListener('keydown', e => {
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        if (currentCards[idx]) {
+          sound.playClick();
+          selectedOption = currentCards[idx];
+          elBtnSubmit.disabled = false;
+          renderCards();
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        submitAnswer();
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        playDialogueSpeech();
+      } else if (e.key.toLowerCase() === 'h') {
+        revealNextHint();
+      }
+    });
+
+    // 觸控螢幕與互動式大屏：首次觸碰時即解鎖音效限制
+    window.addEventListener('pointerdown', () => sound.init(), { once: true });
+    window.addEventListener('touchstart', () => sound.init(), { once: true });
+
+    // 啟動遊戲
+    initGame();
+  </script>
+</body>
+</html>

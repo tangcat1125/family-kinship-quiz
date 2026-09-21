@@ -1,0 +1,301 @@
+/* tree.css - 家族族人樹狀圖樣式與亮燈光影特效 */
+
+.family-tree-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  overflow: auto;
+  user-select: none;
+}
+
+/* 頂部圖例 */
+.tree-legend {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 10px;
+  background: #f8fafc;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  border: 1px solid #e2e8f0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-father .legend-dot { background-color: #4caf50; }
+.legend-core .legend-dot { background-color: #ff9800; }
+.legend-mother .legend-dot { background-color: #ab47bc; }
+
+/* 樹狀大架構 (三欄並排展開) */
+.tree-layout {
+  display: grid;
+  grid-template-columns: 1.15fr 0.8fr 1.05fr;
+  gap: 10px;
+  flex: 1;
+  min-height: 380px;
+}
+
+.tree-branch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  position: relative;
+  background: #ffffff;
+  border: 2px dashed #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.branch-father {
+  background: linear-gradient(180deg, #f1f8e9 0%, #ffffff 100%);
+  border-color: #a5d6a7;
+}
+
+.branch-core {
+  background: linear-gradient(180deg, #fff8e1 0%, #ffffff 100%);
+  border-color: #ffe082;
+}
+
+.branch-mother {
+  background: linear-gradient(180deg, #f3e5f5 0%, #ffffff 100%);
+  border-color: #ce93d8;
+}
+
+.branch-label {
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  padding: 3px 8px;
+  border-radius: 12px;
+  letter-spacing: 1px;
+}
+
+.branch-father .branch-label { background: #c8e6c9; color: #1b5e20; }
+.branch-core .branch-label { background: #ffe082; color: #e65100; }
+.branch-mother .branch-label { background: #e1bee7; color: #4a148c; }
+
+/* 世代橫列 */
+.tree-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.couple-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 4px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.couple-connector {
+  font-size: 14px;
+  color: #e91e63;
+  font-weight: bold;
+}
+
+.relative-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.me-group {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* 家族節點卡片 (Tree Node) */
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 2px solid #cfd8dc;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 90px;
+  position: relative;
+}
+
+.tree-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+/* 頭像外框 */
+.node-avatar-box {
+  width: 38px;
+  height: 38px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.light-badge, .lock-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  font-size: 11px;
+  line-height: 1;
+  background: #ffffff;
+  border-radius: 50%;
+  padding: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* 節點文字資訊 */
+.node-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.node-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #263238;
+  white-space: nowrap;
+}
+
+.node-relation {
+  font-size: 10px;
+  color: #78909c;
+  white-space: nowrap;
+}
+
+/* ================== 狀態設計 (鎖定 / 目標呼吸燈 / 答對亮燈) ================== */
+
+/* 1. 鎖定暗燈狀態 */
+.node-locked {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  opacity: 0.85;
+}
+
+.node-locked .node-title {
+  color: #64748b;
+  font-weight: bold;
+}
+
+/* 2. 當前猜測目標 (金色呼吸光圈引導學童注意力) */
+.node-target-pulse {
+  border-color: #f59e0b !important;
+  background: #fffbeb !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35), 0 4px 12px rgba(245, 158, 11, 0.25) !important;
+  animation: pulseHalo 1.5s infinite ease-in-out;
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.node-target-pulse .node-title {
+  color: #b45309 !important;
+  font-weight: 900;
+}
+
+@keyframes pulseHalo {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4), 0 4px 12px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(245, 158, 11, 0.15), 0 6px 18px rgba(245, 158, 11, 0.45);
+  }
+}
+
+/* 3. 已解鎖亮燈狀態 (綠色/粉紫明亮) */
+.node-unlocked {
+  opacity: 1;
+}
+
+.father-node.node-unlocked {
+  border-color: #4caf50;
+  background: #f1f8e9;
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.2);
+}
+
+.father-node.node-unlocked .node-title {
+  color: #2e7d32;
+}
+
+.mother-node.node-unlocked {
+  border-color: #ab47bc;
+  background: #f3e5f5;
+  box-shadow: 0 2px 6px rgba(171, 71, 188, 0.2);
+}
+
+.mother-node.node-unlocked .node-title {
+  color: #6a1b9a;
+}
+
+.core-node.node-unlocked {
+  border-color: #ff9800;
+  background: #fff3e0;
+  box-shadow: 0 2px 6px rgba(255, 152, 0, 0.2);
+}
+
+.core-node.node-unlocked .node-title {
+  color: #e65100;
+}
+
+/* 剛剛答對亮燈的星光爆發動畫 */
+.node-just-lit {
+  animation: litBurst 1.2s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  z-index: 20;
+}
+
+@keyframes litBurst {
+  0% {
+    transform: scale(0.9);
+    filter: brightness(1.8);
+  }
+  40% {
+    transform: scale(1.18);
+    filter: brightness(2);
+    box-shadow: 0 0 25px #ffd700, 0 0 45px #ffeb3b;
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.star-sparkle {
+  animation: rotateSparkle 1.2s ease-out;
+}
+
+@keyframes rotateSparkle {
+  0% { transform: rotate(0deg) scale(0); opacity: 0; }
+  50% { transform: rotate(180deg) scale(1.6); opacity: 1; }
+  100% { transform: rotate(360deg) scale(1); opacity: 1; }
+}
